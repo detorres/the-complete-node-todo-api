@@ -6,7 +6,7 @@ const {app} = require('../server');
 const {Todo} = require('../models/todo');
 
 const todos = [{ text: 'First test todo', _id: new ObjectID() },
-               {text: 'Second test todo', _id: new ObjectID() }];
+               { text: 'Second test todo', _id: new ObjectID(), completed: true, completedAt: 333 }];
 
 beforeEach((done) =>
 {
@@ -137,5 +137,62 @@ describe('DELETE /todos/:id', () =>
     request(app).delete(`/todos/${id}`)
       .expect(404)
       .end(done);
+  });
+});
+
+describe('PATCH /todos/:id', () =>
+{
+  it('should update the todo', (done) =>
+  {
+    var id = todos[0]._id.toHexString();
+    request(app).patch(`/todos/${id}`).send({text: 'new text', completed: true})
+      .expect(200)
+      .expect((res) =>
+      {
+        expect(res.body.todo.text).toBe('new text');
+        expect(res.body.todo.completed).toBe(true);
+        expect(res.body.todo.completedAt).toBeA('number');
+      })
+      .end((err, res) =>
+      {
+        if (err) return done(err);
+
+        Todo.findById(id)
+          .then((todo) =>
+          {
+            expect(todo.text).toBe('new text');
+            expect(todo.completed).toBe(true);
+            expect(todo.completedAt).toBeA('number');
+            done();
+          })
+          .catch((err) => done(err));
+      })
+  });
+
+  it('should clear completedAt when todo is not completed', (done) =>
+  {
+    var id = todos[1]._id.toHexString();
+    request(app).patch(`/todos/${id}`).send({text: 'changed text', completed: false})
+      .expect(200)
+      .expect((res) =>
+      {
+        expect(res.body.todo.text).toBe('changed text');
+        expect(res.body.todo.completed).toBe(false);
+        expect(res.body.todo.completedAt).toNotExist();
+      })
+      .end((err, res) =>
+      {
+        if (err) return done(err);
+
+        Todo.findById(id)
+          .then((todo) =>
+          {
+            expect(todo.text).toBe('changed text');
+            expect(todo.completed).toBe(false);
+            expect(todo.completedAt).toNotExist();
+            done();
+          })
+          .catch((err) => done(err));
+      });
   });
 });
