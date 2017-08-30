@@ -43,11 +43,12 @@ describe('POST /todos', () =>
       {
         if (err) return done(err);
 
-        Todo.find().then((todos) =>
-        {
-          expect(todos.length).toBe(2);
-          done();
-        }).catch((err) => done(err));
+        Todo.find()
+          .then((todos) =>
+          {
+            expect(todos.length).toBe(2);
+            done();
+          }).catch((err) => done(err));
       });
   });
 });
@@ -208,10 +209,7 @@ describe('GET /users/me', () =>
   {
     request(app).get('/users/me')
       .expect(401)
-      .expect((res) =>
-      {
-        expect(res.body).toEqual({});
-      })
+      .expect((res) => expect(res.body).toEqual({}))
       .end(done);
   });
 });
@@ -235,13 +233,14 @@ describe('POST /users', () =>
       {
         if (err) return done(err);
 
-        User.findOne({email}).then((user) =>
-        {
-          expect(user).toExist();
-          expect(user.password).toNotBe(password);
-          done();
-        })
-        .catch((err) => done(err));
+        User.findOne({email})
+          .then((user) =>
+          {
+            expect(user).toExist();
+            expect(user.password).toNotBe(password);
+            done();
+          })
+          .catch((err) => done(err));
       });
   });
 
@@ -279,12 +278,13 @@ describe('POST /users/login', () =>
       {
         if (err) return done(err);
 
-        User.findById(users[1]._id).then((user) =>
-        {
-          expect(user.tokens[0]).toInclude({ access: 'auth', token: res.headers['x-auth'] });
-          done();
-        })
-        .catch((err) => done(err));
+        User.findById(users[1]._id)
+          .then((user) =>
+          {
+            expect(user.tokens[0]).toInclude({ access: 'auth', token: res.headers['x-auth'] });
+            done();
+          })
+          .catch((err) => done(err));
       });
   });
 
@@ -299,12 +299,34 @@ describe('POST /users/login', () =>
       {
         if (err) return done(err);
 
-        User.findById(users[1]._id).then((user) =>
-        {
-          expect(user.tokens.length).toBe(0);
-          done();
-        })
-        .catch((err) => done(err));
+        User.findById(users[1]._id)
+          .then((user) =>
+          {
+            expect(user.tokens.length).toBe(0);
+            done();
+          })
+          .catch((err) => done(err));
+      });
+  });
+});
+
+describe('DELETE /users/me/token', () =>
+{
+  it('should remove auth token on logout', (done) =>
+  {
+    request(app).delete('/users/me/token').set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .end((err, res) =>
+      {
+        if (err) return done(err);
+
+        User.findById(users[0]._id)
+          .then((user) =>
+          {
+            expect(user.tokens.length).toBe(0);
+            done();
+          })
+          .catch((err) => done(err));
       });
   });
 });
