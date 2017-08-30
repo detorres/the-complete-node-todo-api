@@ -36,15 +36,17 @@ var UserSchema = new mongoose.Schema(
 });
 
 // Override toJSON to restrict fields returned to callers.
-UserSchema.methods.toJSON = function () {
+UserSchema.methods.toJSON = function ()
+{
   var user = this;
   var userObject = user.toObject();
 
   return _.pick(userObject, ['_id', 'email']);
 };
 
-UserSchema.methods.generateAuthToken = function () {
-    var user = this;
+UserSchema.methods.generateAuthToken = function ()
+{
+  var user = this;
   var access = 'auth';
   var token = jwt.sign({ _id: user._id.toHexString(), access }, 'abc123').toString();
   user.tokens.push({
@@ -56,6 +58,17 @@ UserSchema.methods.generateAuthToken = function () {
   {
     return token;
   })
+};
+
+UserSchema.methods.removeToken = function (token)
+{
+  var user = this;
+
+  return user.update({
+    $pull: {
+      tokens: {token}
+    }
+  });
 };
 
 UserSchema.statics.findByToken = function (token)
